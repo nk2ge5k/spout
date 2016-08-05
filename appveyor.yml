@@ -1,0 +1,23 @@
+build: false
+shallow_clone: false
+platform: 'x86'
+clone_folder: C:\projects\spout
+init:
+  - cinst php
+  - SET PATH=C:\tools\php\;%PATH%
+install:
+  - cd c:\tools\php
+  - copy php.ini-production php.ini
+  - echo date.timezone="UTC" >> php.ini
+  - echo extension_dir=ext >> php.ini
+  - echo extension=php_openssl.dll >> php.ini
+  - echo extension=php_intl.dll >> php.ini
+  - echo extension=php_mbstring.dll >> php.ini
+  - echo extension=php_fileinfo.dll >> php.ini
+  - echo extension=php_curl.dll >> php.ini
+  - cd C:\projects\spout
+  - php -r "readfile('https://getcomposer.org/installer');" | php
+  - php composer.phar install --prefer-dist --no-interaction
+test_script:
+  - cd C:\projects\spout
+  - vendor\bin\phpunit.bat
