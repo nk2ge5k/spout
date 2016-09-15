@@ -84,6 +84,20 @@ class CachingStrategyFactory
      */
     public function getBestCachingStrategy($sharedStringsUniqueCount, $tempFolder = null)
     {
+
+        try {
+            $pdo = new \PDO(
+                'sqlite:/tmp/spout.sq3',
+                null,
+                null,
+                array(\PDO::ATTR_PERSISTENT => true)
+            );
+        } catch(\Exception $e) {
+            throw new \Exception('I am not here');
+        }
+
+        return new PdoStrategy($pdo);
+
         if ($this->isInMemoryStrategyUsageSafe($sharedStringsUniqueCount)) {
             return new InMemoryStrategy($sharedStringsUniqueCount);
         } else {
