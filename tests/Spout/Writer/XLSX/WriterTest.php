@@ -101,7 +101,7 @@ class WriterTest extends \PHPUnit_Framework_TestCase
     {
         $fileName = 'test_add_row_should_throw_exception_if_unsupported_data_type_passed_in.xlsx';
         $dataRows = [
-            [str_repeat('a', Worksheet::MAX_CHARACTERS_PER_CELL + 1)],
+                [str_repeat('a', Worksheet::MAX_CHARACTERS_PER_CELL + 1)],
         ];
 
         $this->writeToXLSXFile($dataRows, $fileName);

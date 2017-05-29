@@ -2,6 +2,8 @@
 
 namespace Box\Spout\Writer\Common\Internal;
 
+use Box\Spout\Writer\Common\Row;
+
 /**
  * Interface WorksheetInterface
  *
@@ -22,14 +24,10 @@ interface WorksheetInterface
     /**
      * Adds data to the worksheet.
      *
-     * @param array $dataRow Array containing data to be written.
-     *          Example $dataRow = ['data1', 1234, null, '', 'data5'];
-     * @param \Box\Spout\Writer\Style\Style $style Style to be applied to the row. NULL means use default style.
+     * @param Row $row The row to be added
      * @return void
-     * @throws \Box\Spout\Common\Exception\IOException If the data cannot be written
-     * @throws \Box\Spout\Common\Exception\InvalidArgumentException If a cell value's type is not supported
      */
-    public function addRow($dataRow, $style);
+    public function addRow(Row $row);
 
     /**
      * Closes the worksheet

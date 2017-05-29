@@ -6,10 +6,12 @@ use Box\Spout\Common\Exception\InvalidArgumentException;
 use Box\Spout\Common\Exception\IOException;
 use Box\Spout\Common\Helper\StringHelper;
 use Box\Spout\Writer\Common\Cell;
+use Box\Spout\Writer\Common\Row;
 use Box\Spout\Writer\Common\Helper\CellHelper;
 use Box\Spout\Writer\Common\Internal\WorksheetInterface;
 use Box\Spout\Writer\Common\Manager\OptionsManagerInterface;
 use Box\Spout\Writer\Common\Options;
+use Box\Spout\Writer\XLSX\Helper\StyleHelper;
 
 /**
  * Class Worksheet
@@ -137,58 +139,40 @@ EOD;
     }
 
     /**
-     * Adds data to the worksheet.
-     *
-     * @param array $dataRow Array containing data to be written. Cannot be empty.
-     *          Example $dataRow = ['data1', 1234, null, '', 'data5'];
-     * @param \Box\Spout\Writer\Style\Style $style Style to be applied to the row. NULL means use default style.
-     * @return void
-     * @throws \Box\Spout\Common\Exception\IOException If the data cannot be written
-     * @throws \Box\Spout\Common\Exception\InvalidArgumentException If a cell value's type is not supported
+     * @inheritdoc
      */
-    public function addRow($dataRow, $style)
+    public function addRow(Row $row)
     {
-        if (!$this->isEmptyRow($dataRow)) {
-            $this->addNonEmptyRow($dataRow, $style);
+        if(!$row->isEmpty()) {
+            $this->addNonEmptyRow($row);
         }
 
         $this->lastWrittenRowIndex++;
     }
 
     /**
-     * Returns whether the given row is empty
-     *
-     * @param array $dataRow Array containing data to be written. Cannot be empty.
-     *          Example $dataRow = ['data1', 1234, null, '', 'data5'];
-     * @return bool Whether the given row is empty
-     */
-    private function isEmptyRow($dataRow)
-    {
-        $numCells = count($dataRow);
-        // using "reset()" instead of "$dataRow[0]" because $dataRow can be an associative array
-        return ($numCells === 1 && CellHelper::isEmpty(reset($dataRow)));
-    }
-
-    /**
      * Adds non empty row to the worksheet.
      *
-     * @param array $dataRow Array containing data to be written. Cannot be empty.
-     *          Example $dataRow = ['data1', 1234, null, '', 'data5'];
-     * @param \Box\Spout\Writer\Style\Style $style Style to be applied to the row. NULL means use default style.
+     * @param Row $row The row to be written
      * @return void
      * @throws \Box\Spout\Common\Exception\IOException If the data cannot be written
-     * @throws \Box\Spout\Common\Exception\InvalidArgumentException If a cell value's type is not supported
      */
-    private function addNonEmptyRow($dataRow, $style)
+    private function addNonEmptyRow(Row $row)
     {
         $cellNumber = 0;
         $rowIndex = $this->lastWrittenRowIndex + 1;
-        $numCells = count($dataRow);
+        $numCells = count($row->getCells());
 
         $rowXML = '<row r="' . $rowIndex . '" spans="1:' . $numCells . '">';
 
-        foreach($dataRow as $cellValue) {
-            $rowXML .= $this->getCellXML($rowIndex, $cellNumber, $cellValue, $style->getId());
+        /** @var Cell $cell */
+        foreach($row->getCells() as $cell) {
+
+            // Apply styles - cascading from the default style -> row style -> cell style
+            $cell->applyStyle($row->getStyle());
+            $this->styleHelper->registerStyle($cell->getStyle());
+
+            $rowXML .= $this->getCellXML($rowIndex, $cellNumber, $cell);
             $cellNumber++;
         }
 
@@ -205,23 +189,16 @@ EOD;
      *
      * @param int $rowIndex
      * @param int $cellNumber
-     * @param mixed $cellValue
-     * @param int $styleId
+     * @param Cell $cell
      * @return string
      * @throws InvalidArgumentException If the given value cannot be processed
      */
-    private function getCellXML($rowIndex, $cellNumber, $cellValue, $styleId)
+    private function getCellXML($rowIndex, $cellNumber, Cell $cell)
     {
+        $styleId = $cell->getStyle()->getId();
         $columnIndex = CellHelper::getCellIndexFromColumnIndex($cellNumber);
         $cellXML = '<c r="' . $columnIndex . $rowIndex . '"';
         $cellXML .= ' s="' . $styleId . '"';
-
-        /** @TODO Remove code duplication with ODS writer: https://github.com/box/spout/pull/383#discussion_r113292746 */
-        if ($cellValue instanceof Cell) {
-            $cell = $cellValue;
-        } else {
-            $cell = new Cell($cellValue);
-        }
 
         if ($cell->isString()) {
             $cellXML .= $this->getCellXMLFragmentForNonEmptyString($cell->getValue());

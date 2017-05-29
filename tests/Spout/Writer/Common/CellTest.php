@@ -2,6 +2,7 @@
 
 namespace Box\Spout\Writer\Common;
 
+use Box\Spout\Writer\Style\StyleBuilder;
 use PHPUnit\Framework\TestCase;
 
 class CellTest extends TestCase
@@ -52,5 +53,13 @@ class CellTest extends TestCase
     public function testCellTypeError()
     {
         $this->assertTrue((new Cell([]))->isError());
+    }
+
+    public function testApplyStyle()
+    {
+        $o =  new Cell('style');
+        $baseStyle = (new StyleBuilder())->setFontBold()->build();
+        $o->applyStyle($baseStyle);
+        $this->assertTrue($o->getStyle()->isFontBold());
     }
 }

@@ -6,7 +6,7 @@ use Box\Spout\Common\Exception\InvalidArgumentException;
 use Box\Spout\Common\Exception\IOException;
 use Box\Spout\Common\Helper\StringHelper;
 use Box\Spout\Writer\Common\Cell;
-use Box\Spout\Writer\Common\Helper\CellHelper;
+use Box\Spout\Writer\Common\Row;
 use Box\Spout\Writer\Common\Internal\WorksheetInterface;
 
 /**
@@ -124,23 +124,16 @@ class Worksheet implements WorksheetInterface
     }
 
     /**
-     * Adds data to the worksheet.
-     *
-     * @param array $dataRow Array containing data to be written. Cannot be empty.
-     *          Example $dataRow = ['data1', 1234, null, '', 'data5'];
-     * @param \Box\Spout\Writer\Style\Style $style Style to be applied to the row. NULL means use default style.
-     * @return void
-     * @throws \Box\Spout\Common\Exception\IOException If the data cannot be written
-     * @throws \Box\Spout\Common\Exception\InvalidArgumentException If a cell value's type is not supported
+     * @inheritdoc
      */
-    public function addRow($dataRow, $style)
+    public function addRow(Row $row)
     {
         // $dataRow can be an associative array. We need to transform
         // it into a regular array, as we'll use the numeric indexes.
-        $dataRowWithNumericIndexes = array_values($dataRow);
+        $dataRowWithNumericIndexes = array_values($row);
 
         $styleIndex = ($style->getId() + 1); // 1-based
-        $cellsCount = count($dataRow);
+        $cellsCount = count($row);
         $this->maxNumColumns = max($this->maxNumColumns, $cellsCount);
 
         $data = '<table:table-row table:style-name="ro1">';
@@ -178,25 +171,18 @@ class Worksheet implements WorksheetInterface
     /**
      * Returns the cell XML content, given its value.
      *
-     * @param mixed $cellValue The value to be written
+     * @param Cell $cell The cell to be written
      * @param int $styleIndex Index of the used style
      * @param int $numTimesValueRepeated Number of times the value is consecutively repeated
      * @return string The cell XML content
      * @throws \Box\Spout\Common\Exception\InvalidArgumentException If a cell value's type is not supported
      */
-    protected function getCellXML($cellValue, $styleIndex, $numTimesValueRepeated)
+    protected function getCellXML(Cell $cell, $styleIndex, $numTimesValueRepeated)
     {
         $data = '<table:table-cell table:style-name="ce' . $styleIndex . '"';
 
         if ($numTimesValueRepeated !== 1) {
             $data .= ' table:number-columns-repeated="' . $numTimesValueRepeated . '"';
-        }
-
-        /** @TODO Remove code duplication with XLSX writer: https://github.com/box/spout/pull/383#discussion_r113292746 */
-        if ($cellValue instanceof Cell) {
-            $cell = $cellValue;
-        } else {
-            $cell = new Cell($cellValue);
         }
 
         if ($cell->isString()) {

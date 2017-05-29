@@ -4,6 +4,7 @@ namespace Box\Spout\Writer\Common\Internal;
 
 use Box\Spout\Writer\Common\Manager\OptionsManagerInterface;
 use Box\Spout\Writer\Common\Options;
+use Box\Spout\Writer\Common\Row;
 use Box\Spout\Writer\Exception\SheetNotFoundException;
 
 /**
@@ -136,39 +137,24 @@ abstract class AbstractWorkbook implements WorkbookInterface
     }
 
     /**
-     * Adds data to the current sheet.
-     * If shouldCreateNewSheetsAutomatically option is set to true, it will handle pagination
-     * with the creation of new worksheets if one worksheet has reached its maximum capicity.
-     *
-     * @param array $dataRow Array containing data to be written. Cannot be empty.
-     *          Example $dataRow = ['data1', 1234, null, '', 'data5'];
-     * @param \Box\Spout\Writer\Style\Style $style Style to be applied to the row.
-     * @return void
-     * @throws \Box\Spout\Common\Exception\IOException If trying to create a new sheet and unable to open the sheet for writing
-     * @throws \Box\Spout\Writer\Exception\WriterException If unable to write data
+     * @inheritdoc
      */
-    public function addRowToCurrentWorksheet($dataRow, $style)
+    public function addRowToCurrentWorksheet(Row $row)
     {
         $currentWorksheet = $this->getCurrentWorksheet();
         $hasReachedMaxRows = $this->hasCurrentWorkseetReachedMaxRows();
-        $styleHelper = $this->getStyleHelper();
 
         // if we reached the maximum number of rows for the current sheet...
         if ($hasReachedMaxRows) {
             // ... continue writing in a new sheet if option set
             if ($this->optionManager->getOption(Options::SHOULD_CREATE_NEW_SHEETS_AUTOMATICALLY)) {
                 $currentWorksheet = $this->addNewSheetAndMakeItCurrent();
-
-                $updatedStyle = $styleHelper->applyExtraStylesIfNeeded($style, $dataRow);
-                $registeredStyle = $styleHelper->registerStyle($updatedStyle);
-                $currentWorksheet->addRow($dataRow, $registeredStyle);
+                $currentWorksheet->addRow($row);
             } else {
                 // otherwise, do nothing as the data won't be read anyways
             }
         } else {
-            $updatedStyle = $styleHelper->applyExtraStylesIfNeeded($style, $dataRow);
-            $registeredStyle = $styleHelper->registerStyle($updatedStyle);
-            $currentWorksheet->addRow($dataRow, $registeredStyle);
+            $currentWorksheet->addRow($row);
         }
     }
 

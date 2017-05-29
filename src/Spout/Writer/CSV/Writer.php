@@ -6,6 +6,7 @@ use Box\Spout\Writer\AbstractWriter;
 use Box\Spout\Common\Exception\IOException;
 use Box\Spout\Common\Helper\EncodingHelper;
 use Box\Spout\Writer\Common\Options;
+use Box\Spout\Writer\Common\Row;
 
 /**
  * Class Writer
@@ -77,20 +78,14 @@ class Writer extends AbstractWriter
     }
 
     /**
-     * Adds data to the currently opened writer.
-     *
-     * @param  array $dataRow Array containing data to be written.
-     *          Example $dataRow = ['data1', 1234, null, '', 'data5'];
-     * @param \Box\Spout\Writer\Style\Style $style Ignored here since CSV does not support styling.
-     * @return void
-     * @throws \Box\Spout\Common\Exception\IOException If unable to write data
+     * @inheritdoc
      */
-    protected function addRowToWriter(array $dataRow, $style)
+    protected function addRowToWriter(Row $row)
     {
         $fieldDelimiter = $this->optionsManager->getOption(Options::FIELD_DELIMITER);
         $fieldEnclosure = $this->optionsManager->getOption(Options::FIELD_ENCLOSURE);
 
-        $wasWriteSuccessful = $this->globalFunctionsHelper->fputcsv($this->filePointer, $dataRow, $fieldDelimiter, $fieldEnclosure);
+        $wasWriteSuccessful = $this->globalFunctionsHelper->fputcsv($this->filePointer, $row->getCells(), $fieldDelimiter, $fieldEnclosure);
         if ($wasWriteSuccessful === false) {
             throw new IOException('Unable to write data');
         }

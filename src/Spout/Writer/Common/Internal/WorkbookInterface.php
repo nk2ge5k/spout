@@ -2,6 +2,8 @@
 
 namespace Box\Spout\Writer\Common\Internal;
 
+use Box\Spout\Writer\Common\Row;
+
 /**
  * Interface WorkbookInterface
  *
@@ -53,14 +55,10 @@ interface WorkbookInterface
      * If shouldCreateNewSheetsAutomatically option is set to true, it will handle pagination
      * with the creation of new worksheets if one worksheet has reached its maximum capicity.
      *
-     * @param array $dataRow Array containing data to be written.
-     *          Example $dataRow = ['data1', 1234, null, '', 'data5'];
-     * @param \Box\Spout\Writer\Style\Style $style Style to be applied to the row.
+     * @param Row $row The row to be appended to the sheet
      * @return void
-     * @throws \Box\Spout\Common\Exception\IOException If trying to create a new sheet and unable to open the sheet for writing
-     * @throws \Box\Spout\Writer\Exception\WriterException If unable to write data
      */
-    public function addRowToCurrentWorksheet($dataRow, $style);
+    public function addRowToCurrentWorksheet(Row $row);
 
     /**
      * Closes the workbook and all its associated sheets.

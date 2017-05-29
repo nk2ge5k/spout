@@ -100,11 +100,24 @@ class Cell
     }
 
     /**
-     * @return Style|null
+     * @return Style
      */
     public function getStyle()
     {
+        if(!isset($this->style)) {
+            $this->setStyle(new Style());
+        }
         return $this->style;
+    }
+
+    /**
+     * @param Style $style
+     * @return $this
+     */
+    public function applyStyle(Style $style)
+    {
+        $this->setStyle($this->getStyle()->mergeWith($style));
+        return $this;
     }
 
     /**

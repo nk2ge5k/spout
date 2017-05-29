@@ -2,6 +2,7 @@
 
 namespace Box\Spout\Writer\Common;
 
+use Box\Spout\Writer\Style\StyleBuilder;
 use PHPUnit\Framework\TestCase;
 
 class RowTest extends TestCase
@@ -76,5 +77,15 @@ class RowTest extends TestCase
             ->setStyle($this->styleMock()->getMock())
             ->setCells([]);
         $this->assertTrue(is_object($o));
+    }
+
+    public function testApplyStyle()
+    {
+        $baseStyle = (new StyleBuilder())->setFontBold()->setFontItalic()->build();
+
+        $o = new Row();
+        $o->applyStyle($baseStyle);
+        $this->assertTrue($o->getStyle()->isFontBold());
+        $this->assertTrue($o->getStyle()->isFontItalic());
     }
 }
