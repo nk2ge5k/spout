@@ -1,6 +1,8 @@
 <?php
 
 namespace Box\Spout\Writer\Common\Helper;
+use Box\Spout\Writer\Common\Cell;
+use Box\Spout\Writer\Style\Style;
 
 /**
  * Class AbstractStyleHelper
@@ -96,13 +98,12 @@ abstract class AbstractStyleHelper
      * Apply additional styles if the given row needs it.
      * Typically, set "wrap text" if a cell contains a new line.
      *
-     * @param \Box\Spout\Writer\Style\Style $style The original style
-     * @param array $dataRow The row the style will be applied to
-     * @return \Box\Spout\Writer\Style\Style The updated style
+     * @param Cell $cell
+     * @return Style
      */
-    public function applyExtraStylesIfNeeded($style, $dataRow)
+    public function applyExtraStylesIfNeeded(Cell $cell)
     {
-        $updatedStyle = $this->applyWrapTextIfCellContainsNewLine($style, $dataRow);
+        $updatedStyle = $this->applyWrapTextIfCellContainsNewLine($cell);
         return $updatedStyle;
     }
 
@@ -115,24 +116,20 @@ abstract class AbstractStyleHelper
      *        A workaround would be to encode "\n" as "_x000D_" but it does not work
      *        on the Windows version of Excel...
      *
-     * @param \Box\Spout\Writer\Style\Style $style The original style
-     * @param array $dataRow The row the style will be applied to
+     * @param Cell $cell The cell the style should be applied to
      * @return \Box\Spout\Writer\Style\Style The eventually updated style
      */
-    protected function applyWrapTextIfCellContainsNewLine($style, $dataRow)
+    protected function applyWrapTextIfCellContainsNewLine(Cell $cell)
     {
         // if the "wrap text" option is already set, no-op
-        if ($style->hasSetWrapText()) {
-            return $style;
+        if ($cell->getStyle()->hasSetWrapText()) {
+            return $cell->getStyle();
         }
 
-        foreach ($dataRow as $cell) {
-            if (is_string($cell) && strpos($cell, "\n") !== false) {
-                $style->setShouldWrapText();
-                break;
-            }
+        if ($cell->isString() && strpos($cell->getValue(), "\n") !== false) {
+            $cell->getStyle()->setShouldWrapText();
         }
 
-        return $style;
+        return $cell->getStyle();
     }
 }

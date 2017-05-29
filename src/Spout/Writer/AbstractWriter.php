@@ -37,9 +37,6 @@ abstract class AbstractWriter implements WriterInterface
     /** @var \Box\Spout\Writer\Common\Manager\OptionsManagerInterface Writer options manager */
     protected $optionsManager;
 
-    /** @var Style Style to be applied to the next written row(s) */
-    protected $rowStyle;
-
     /** @var string Content-Type value for the header - to be defined by child class */
     protected static $headerContentType;
 
@@ -72,7 +69,6 @@ abstract class AbstractWriter implements WriterInterface
     public function __construct(OptionsManagerInterface $optionsManager)
     {
         $this->optionsManager = $optionsManager;
-        $this->resetRowStyleToDefault();
     }
 
     /**
@@ -86,7 +82,6 @@ abstract class AbstractWriter implements WriterInterface
     public function setDefaultRowStyle($defaultStyle)
     {
         $this->optionsManager->setOption(Options::DEFAULT_ROW_STYLE, $defaultStyle);
-        $this->resetRowStyleToDefault();
         return $this;
     }
 
@@ -202,31 +197,22 @@ abstract class AbstractWriter implements WriterInterface
             throw new InvalidArgumentException('addRow accepts an array with scalar values or a Row object');
         }
 
-        // XXX This is basically just a check for an empty array here
-        // There are other checks in the dedicated Worksheet writers
-        // if the row is "really" empty.
-        // This stays so the tests still pass
-        $isEmptyRow = false;
-
         if (is_array($row)) {
-            $isEmptyRow = empty($row);
             $row = $this->createRowFromArray($row, null);
         }
 
         $this->applyDefaultRowStyle($row);
 
         if ($this->isWriterOpened) {
-            if (!$isEmptyRow) {
-                try {
-                    $this->addRowToWriter($row);
-                } catch (SpoutException $e) {
-                    // if an exception occurs while writing data,
-                    // close the writer and remove all files created so far.
-                    $this->closeAndAttemptToCleanupAllFiles();
+            try {
+                $this->addRowToWriter($row);
+            } catch (SpoutException $e) {
+                // if an exception occurs while writing data,
+                // close the writer and remove all files created so far.
+                $this->closeAndAttemptToCleanupAllFiles();
 
-                    // re-throw the exception to alert developers of the error
-                    throw $e;
-                }
+                // re-throw the exception to alert developers of the error
+                throw $e;
             }
         } else {
             throw new WriterNotOpenedException('The writer needs to be opened before adding row.');
@@ -271,8 +257,8 @@ abstract class AbstractWriter implements WriterInterface
             return new Cell($value);
         }, $dataRows));
 
-        if($style) {
-            $row->applyStyle($style);
+        if($style !== null) {
+            $row->setStyle($style);
         }
 
         return $row;
@@ -285,8 +271,8 @@ abstract class AbstractWriter implements WriterInterface
     {
         if (!empty($dataRows)) {
             $firstRow = reset($dataRows);
-            if (!is_array($firstRow)) {
-                throw new InvalidArgumentException('The input should be an array of arrays');
+            if (!is_array($firstRow) && !$firstRow instanceof Row) {
+                throw new InvalidArgumentException('The input should be an array of arrays or row objects');
             }
 
             foreach ($dataRows as $dataRow) {
@@ -306,25 +292,17 @@ abstract class AbstractWriter implements WriterInterface
             throw new InvalidArgumentException('The "$style" argument must be a Style instance and cannot be NULL.');
         }
 
-        $this->setRowStyle($style);
-        $this->addRows($dataRows);
-        $this->resetRowStyleToDefault();
+        $this->addRows(array_map(function($row) use ($style) {
+            if(is_array($row)) {
+                return $this->createRowFromArray($row, $style);
+            } elseif ($row instanceof Row) {
+                return $row;
+            } else {
+                throw new InvalidArgumentException();
+            }
+        }, $dataRows));
 
         return $this;
-    }
-
-    /**
-     * Sets the style to be applied to the next written rows
-     * until it is changed or reset.
-     *
-     * @param Style $style
-     * @return void
-     */
-    private function setRowStyle($style)
-    {
-        // Merge given style with the default one to inherit custom properties
-        $defaultRowStyle = $this->optionsManager->getOption(Options::DEFAULT_ROW_STYLE);
-        $this->rowStyle = $style->mergeWith($defaultRowStyle);
     }
 
     /**
@@ -336,16 +314,6 @@ abstract class AbstractWriter implements WriterInterface
         $defaultRowStyle = $this->optionsManager->getOption(Options::DEFAULT_ROW_STYLE);
         $row->applyStyle($defaultRowStyle);
         return $this;
-    }
-
-    /**
-     * Resets the style to be applied to the next written rows.
-     *
-     * @return void
-     */
-    private function resetRowStyleToDefault()
-    {
-        $this->rowStyle = $this->optionsManager->getOption(Options::DEFAULT_ROW_STYLE);
     }
 
     /**

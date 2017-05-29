@@ -2,6 +2,8 @@
 
 namespace Box\Spout\Writer\XLSX\Helper;
 
+use Box\Spout\Writer\Common\Cell;
+use Box\Spout\Writer\Common\Row;
 use Box\Spout\Writer\Style\Border;
 use Box\Spout\Writer\Style\BorderBuilder;
 use Box\Spout\Writer\Style\Color;
@@ -84,29 +86,15 @@ class StyleHelperTest extends \PHPUnit_Framework_TestCase
     /**
      * @return void
      */
-    public function testApplyExtraStylesIfNeededShouldApplyWrapTextIfCellContainsNewLine()
-    {
-        $style = clone $this->defaultStyle;
-        $styleHelper = new StyleHelper($this->defaultStyle);
-
-        $this->assertFalse($style->shouldWrapText());
-
-        $updatedStyle = $styleHelper->applyExtraStylesIfNeeded($style, [12, 'single line', "multi\nlines", null]);
-
-        $this->assertTrue($updatedStyle->shouldWrapText());
-    }
-
-    /**
-     * @return void
-     */
     public function testApplyExtraStylesIfNeededShouldDoNothingIfWrapTextAlreadyApplied()
     {
         $style = (new StyleBuilder())->setShouldWrapText()->build();
         $styleHelper = new StyleHelper($this->defaultStyle);
 
         $this->assertTrue($style->shouldWrapText());
+        $cell = new Cell("multi\nlines", $style);
 
-        $updatedStyle = $styleHelper->applyExtraStylesIfNeeded($style, ["multi\nlines"]);
+        $updatedStyle = $styleHelper->applyExtraStylesIfNeeded($cell);
 
         $this->assertTrue($updatedStyle->shouldWrapText());
     }

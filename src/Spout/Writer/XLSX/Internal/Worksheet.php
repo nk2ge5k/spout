@@ -170,8 +170,9 @@ EOD;
 
             // Apply styles - cascading from the default style -> row style -> cell style
             $cell->applyStyle($row->getStyle());
-            $this->styleHelper->registerStyle($cell->getStyle());
-
+            $this->styleHelper->applyExtraStylesIfNeeded($cell);
+            $registeredStyle = $this->styleHelper->registerStyle($cell->getStyle());
+            $cell->setStyle($registeredStyle);
             $rowXML .= $this->getCellXML($rowIndex, $cellNumber, $cell);
             $cellNumber++;
         }

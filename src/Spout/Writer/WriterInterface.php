@@ -2,8 +2,6 @@
 
 namespace Box\Spout\Writer;
 
-use Box\Spout\Writer\Common\Row;
-
 /**
  * Interface WriterInterface
  *
@@ -34,11 +32,8 @@ interface WriterInterface
     /**
      * Write given data to the output. New data will be appended to end of stream.
      *
-     * @param Row|array $row The row to be appended to the stream
+     * @param array|\Box\Spout\Writer\Common\Row $row The row to be appended to the stream
      * @return WriterInterface
-     * @example
-     *
-     * @TODO: Example
      *
      * @api
      */
@@ -46,10 +41,11 @@ interface WriterInterface
 
     /**
      * Write given data to the output and apply the given style.
+     *
      * @see addRow
      *
-     * @param array|Row $row
-     * @param Style $style Style to be applied to the row.
+     * @param array|\Box\Spout\Writer\Common\Row $row
+     * @param \Box\Spout\Writer\Style\Style $style Style to be applied to the row.
      * @return WriterInterface
      * @deprecated Use addRow with a Row object instead
      */
@@ -67,6 +63,8 @@ interface WriterInterface
      * @throws \Box\Spout\Common\Exception\InvalidArgumentException If the input param is not valid
      * @throws \Box\Spout\Writer\Exception\WriterNotOpenedException If the writer has not been opened yet
      * @throws \Box\Spout\Common\Exception\IOException If unable to write data
+     *
+     * @api
      */
     public function addRows(array $dataRows);
 
@@ -75,11 +73,13 @@ interface WriterInterface
      * @see addRows
      *
      * @param array $dataRows Array of array containing data to be streamed.
-     * @param Style $style Style to be applied to the rows.
+     * @param \Box\Spout\Writer\Style\Style  $style Style to be applied to the rows.
      * @return WriterInterface
      * @throws \Box\Spout\Common\Exception\InvalidArgumentException If the input param is not valid
      * @throws \Box\Spout\Writer\Exception\WriterNotOpenedException If this function is called before opening the writer
      * @throws \Box\Spout\Common\Exception\IOException If unable to write data
+     *
+     * @deprecated Use addRows with an array of Row objects instead
      */
     public function addRowsWithStyle(array $dataRows, $style);
 

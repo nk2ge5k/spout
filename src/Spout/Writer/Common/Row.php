@@ -78,7 +78,7 @@ class Row
      */
     public function applyStyle(Style $style = null)
     {
-        if(!$style) {
+        if($style === null) {
             return $this;
         }
         $this->setStyle($this->getStyle()->mergeWith($style));
