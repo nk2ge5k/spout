@@ -168,12 +168,11 @@ EOD;
         /** @var Cell $cell */
         foreach($row->getCells() as $cell) {
 
-            // Apply styles - cascading from the default style -> row style -> cell style
+            // Apply styles - the row style is merged at this point
             $cell->applyStyle($row->getStyle());
             $this->styleHelper->applyExtraStylesIfNeeded($cell);
             $registeredStyle = $this->styleHelper->registerStyle($cell->getStyle());
-            $cell->setStyle($registeredStyle);
-            $rowXML .= $this->getCellXML($rowIndex, $cellNumber, $cell);
+            $rowXML .= $this->getCellXML($rowIndex, $cellNumber, $cell, $registeredStyle->getId());
             $cellNumber++;
         }
 
@@ -191,12 +190,12 @@ EOD;
      * @param int $rowIndex
      * @param int $cellNumber
      * @param Cell $cell
+     * @param int $styleId
      * @return string
      * @throws InvalidArgumentException If the given value cannot be processed
      */
-    private function getCellXML($rowIndex, $cellNumber, Cell $cell)
+    private function getCellXML($rowIndex, $cellNumber, Cell $cell, $styleId)
     {
-        $styleId = $cell->getStyle()->getId();
         $columnIndex = CellHelper::getCellIndexFromColumnIndex($cellNumber);
         $cellXML = '<c r="' . $columnIndex . $rowIndex . '"';
         $cellXML .= ' s="' . $styleId . '"';

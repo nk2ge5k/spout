@@ -2,6 +2,7 @@
 
 namespace Box\Spout\Writer\ODS\Helper;
 
+use Box\Spout\Writer\Common\Cell;
 use Box\Spout\Writer\Style\StyleBuilder;
 
 /**
@@ -60,21 +61,6 @@ class StyleHelperTest extends \PHPUnit_Framework_TestCase
     /**
      * @return void
      */
-    public function testApplyExtraStylesIfNeededShouldApplyWrapTextIfCellContainsNewLine()
-    {
-        $style = clone $this->defaultStyle;
-        $styleHelper = new StyleHelper($this->defaultStyle);
-
-        $this->assertFalse($style->shouldWrapText());
-
-        $updatedStyle = $styleHelper->applyExtraStylesIfNeeded($style, [12, 'single line', "multi\nlines", null]);
-
-        $this->assertTrue($updatedStyle->shouldWrapText());
-    }
-
-    /**
-     * @return void
-     */
     public function testApplyExtraStylesIfNeededShouldDoNothingIfWrapTextAlreadyApplied()
     {
         $style = (new StyleBuilder())->setShouldWrapText()->build();
@@ -82,7 +68,7 @@ class StyleHelperTest extends \PHPUnit_Framework_TestCase
 
         $this->assertTrue($style->shouldWrapText());
 
-        $updatedStyle = $styleHelper->applyExtraStylesIfNeeded($style, ["multi\nlines"]);
+        $updatedStyle = $styleHelper->applyExtraStylesIfNeeded(new Cell("multi\nlines"));
 
         $this->assertTrue($updatedStyle->shouldWrapText());
     }

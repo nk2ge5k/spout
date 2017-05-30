@@ -197,22 +197,23 @@ abstract class AbstractWriter implements WriterInterface
             throw new InvalidArgumentException('addRow accepts an array with scalar values or a Row object');
         }
 
-        if (is_array($row)) {
+        if (is_array($row) && !empty($row)) {
             $row = $this->createRowFromArray($row, null);
         }
 
-        $this->applyDefaultRowStyle($row);
-
         if ($this->isWriterOpened) {
-            try {
-                $this->addRowToWriter($row);
-            } catch (SpoutException $e) {
-                // if an exception occurs while writing data,
-                // close the writer and remove all files created so far.
-                $this->closeAndAttemptToCleanupAllFiles();
+            if(!empty($row)) {
+                try {
+                    $this->applyDefaultRowStyle($row);
+                    $this->addRowToWriter($row);
+                } catch (SpoutException $e) {
+                    // if an exception occurs while writing data,
+                    // close the writer and remove all files created so far.
+                    $this->closeAndAttemptToCleanupAllFiles();
 
-                // re-throw the exception to alert developers of the error
-                throw $e;
+                    // re-throw the exception to alert developers of the error
+                    throw $e;
+                }
             }
         } else {
             throw new WriterNotOpenedException('The writer needs to be opened before adding row.');

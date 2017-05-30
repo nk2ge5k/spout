@@ -24,6 +24,9 @@ class Worksheet implements WorksheetInterface
     /** @var string Path to the XML file that will contain the sheet data */
     protected $worksheetFilePath;
 
+    /** @var \Box\Spout\Writer\ODS\Helper\StyleHelper Helper to work with styles */
+    protected $styleHelper;
+
     /** @var \Box\Spout\Common\Escaper\ODS Strings escaper */
     protected $stringsEscaper;
 
@@ -42,15 +45,17 @@ class Worksheet implements WorksheetInterface
     /**
      * @param \Box\Spout\Writer\Common\Sheet $externalSheet The associated "external" sheet
      * @param string $worksheetFilesFolder Temporary folder where the files to create the ODS will be stored
+     * @param \Box\Spout\Writer\ODS\Helper\StyleHelper $styleHelper Helper to work with styles
      * @throws \Box\Spout\Common\Exception\IOException If the sheet data file cannot be opened for writing
      */
-    public function __construct($externalSheet, $worksheetFilesFolder)
+    public function __construct($externalSheet, $worksheetFilesFolder, $styleHelper)
     {
         $this->externalSheet = $externalSheet;
         /** @noinspection PhpUnnecessaryFullyQualifiedNameInspection */
         $this->stringsEscaper = \Box\Spout\Common\Escaper\ODS::getInstance();
         $this->worksheetFilePath = $worksheetFilesFolder . '/sheet' . $externalSheet->getIndex() . '.xml';
 
+        $this->styleHelper = $styleHelper;
         $this->stringHelper = new StringHelper();
 
         $this->startSheet();
@@ -128,12 +133,8 @@ class Worksheet implements WorksheetInterface
      */
     public function addRow(Row $row)
     {
-        // $dataRow can be an associative array. We need to transform
-        // it into a regular array, as we'll use the numeric indexes.
-        $dataRowWithNumericIndexes = array_values($row);
-
-        $styleIndex = ($style->getId() + 1); // 1-based
-        $cellsCount = count($row);
+        $cells = $row->getCells();
+        $cellsCount = count($cells);
         $this->maxNumColumns = max($this->maxNumColumns, $cellsCount);
 
         $data = '<table:table-row table:style-name="ro1">';
@@ -142,14 +143,21 @@ class Worksheet implements WorksheetInterface
         $nextCellIndex = 1;
 
         for ($i = 0; $i < $cellsCount; $i++) {
-            $currentCellValue = $dataRowWithNumericIndexes[$currentCellIndex];
 
-            // Using isset here because it is way faster than array_key_exists...
-            if (!isset($dataRowWithNumericIndexes[$nextCellIndex]) ||
-                $currentCellValue !== $dataRowWithNumericIndexes[$nextCellIndex]) {
+            /** @var Cell $cell */
+            $cell = $row->getCells()[$currentCellIndex];
+            /** @var Cell|null $nextCell */
+            $nextCell = isset($cells[$nextCellIndex]) ? $cells[$nextCellIndex] : null;
+
+            if (null === $nextCell || $cell->getValue() !== $nextCell->getValue()) {
+                // Apply styles - the row style is merged at this point
+                $cell->applyStyle($row->getStyle());
+                $this->styleHelper->applyExtraStylesIfNeeded($cell);
+                $registeredStyle = $this->styleHelper->registerStyle($cell->getStyle());
+                $styleIndex = $registeredStyle->getId() + 1; // 1-based
 
                 $numTimesValueRepeated = ($nextCellIndex - $currentCellIndex);
-                $data .= $this->getCellXML($currentCellValue, $styleIndex, $numTimesValueRepeated);
+                $data .= $this->getCellXML($cell, $styleIndex, $numTimesValueRepeated);
 
                 $currentCellIndex = $nextCellIndex;
             }

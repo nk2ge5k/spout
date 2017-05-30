@@ -74,7 +74,7 @@ class Workbook extends AbstractWorkbook
         $sheet = new Sheet($newSheetIndex, $this->internalId);
 
         $sheetsContentTempFolder = $this->fileSystemHelper->getSheetsContentTempFolder();
-        $worksheet = new Worksheet($sheet, $sheetsContentTempFolder);
+        $worksheet = new Worksheet($sheet, $sheetsContentTempFolder, $this->styleHelper);
         $this->worksheets[] = $worksheet;
 
         return $worksheet;
