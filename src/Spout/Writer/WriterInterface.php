@@ -36,10 +36,10 @@ interface WriterInterface
     /**
      * Append a row to the end of the stream.
      *
-     * @param Row $row The row to be appended to the stream
+     * @param array|Row $row The row to be appended to the stream
      * @return WriterInterface
      */
-    public function addRow(Row $row);
+    public function addRow($row);
 
     /**
      * Write given data to the output with a closure function. New data will be appended to the end of the stream.

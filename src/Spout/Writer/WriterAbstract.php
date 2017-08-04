@@ -13,6 +13,7 @@ use Box\Spout\Writer\Common\Entity\Row;
 use Box\Spout\Writer\Common\Entity\Style\Style;
 use Box\Spout\Writer\Common\Manager\OptionsManagerInterface;
 use Box\Spout\Writer\Common\Manager\Style\StyleMerger;
+use Box\Spout\Writer\Common\Manager\RowManager;
 use Box\Spout\Writer\Exception\WriterAlreadyOpenedException;
 use Box\Spout\Writer\Exception\WriterNotOpenedException;
 
@@ -42,6 +43,9 @@ abstract class WriterAbstract implements WriterInterface
     /** @var StyleMerger Helps merge styles together */
     protected $styleMerger;
 
+    /** @var RowManager Helps apply styles on Row */ 
+    protected $rowManager; 
+
     /** @var string Content-Type value for the header - to be defined by child class */
     protected static $headerContentType;
 
@@ -59,6 +63,7 @@ abstract class WriterAbstract implements WriterInterface
         $this->optionsManager = $optionsManager;
         $this->styleMerger = $styleMerger;
         $this->globalFunctionsHelper = $globalFunctionsHelper;
+        $this->rowManager = new RowManager($styleMerger);
     }
 
     /**
@@ -178,9 +183,24 @@ abstract class WriterAbstract implements WriterInterface
     /**
      * @inheritdoc
      */
-    public function addRow(Row $row)
+    public function addRow($row)
     {
         if ($this->isWriterOpened) {
+
+            if ( is_array($row) ) {
+                $row = $this->createRowFromArray($row);
+            }
+
+            if ( !$row instanceof Row ) {
+                $this->closeAndAttemptToCleanupAllFiles();
+                throw new InvalidArgumentException(
+                    sprintf(
+                        'Argument must be type of array or instance of Row, %s given',
+                        is_object($row) ? get_class($row) : gettype($row)
+                    )
+                );
+            }
+
             if (!$row->isEmpty()) {
                 try {
                     $this->applyDefaultRowStyle($row);
@@ -204,7 +224,7 @@ abstract class WriterAbstract implements WriterInterface
      */
     public function withRow(\Closure $callback)
     {
-        return $this->addRow($callback(new Row()));
+        return $this->addRow($callback(new Row( [], null, $this->rowManager)));
     }
 
     /**
@@ -213,12 +233,6 @@ abstract class WriterAbstract implements WriterInterface
     public function addRows(array $dataRows)
     {
         foreach ($dataRows as $dataRow) {
-
-            if(!$dataRow instanceof Row) {
-                $this->closeAndAttemptToCleanupAllFiles();
-                throw new InvalidArgumentException();
-            }
-
             $this->addRow($dataRow);
         }
         return $this;
@@ -231,16 +245,14 @@ abstract class WriterAbstract implements WriterInterface
      */
     protected function createRowFromArray(array $dataRow, Style $style = null)
     {
-        $row = (new Row())->setCells(array_map(function ($value) {
+        foreach ( $dataRow as &$value ) { 
             if ($value instanceof Cell) {
-                return $value;
+                continue;
             }
-            return new Cell($value);
-        }, $dataRow));
-
-        if ($style !== null) {
-            $row->setStyle($style);
+            $value = new Cell($value);
         }
+
+        $row = new Row($dataRow, $style, $this->rowManager);
 
         return $row;
     }
